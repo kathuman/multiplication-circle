@@ -45,3 +45,5 @@ Single self-contained HTML file — inline CSS and vanilla JavaScript, no build 
 ## License
 
 MIT — do whatever you want with it.
+
+Daniel Sepulveda 2026 kathuman@gmail.com
