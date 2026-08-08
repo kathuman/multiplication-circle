@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multiplication Circle</title>
+<style>
+  :root{
+    --bg:#0b0d12;
+    --panel:#12151c;
+    --line:#5ec9ff;
+    --line2:#ff5ec9;
+    --text:#e6e9ef;
+    --muted:#8b93a3;
+    --accent:#5ec9ff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI', Roboto, sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    padding:24px 16px 40px;
+  }
+  h1{
+    font-size:1.1rem;
+    font-weight:600;
+    letter-spacing:0.02em;
+    margin:0 0 4px;
+    color:var(--text);
+  }
+  p.sub{
+    color:var(--muted);
+    font-size:0.85rem;
+    margin:0 0 20px;
+  }
+  #canvas-wrap{
+    background:var(--panel);
+    border-radius:16px;
+    padding:12px;
+    box-shadow:0 0 40px rgba(94,201,255,0.06);
+  }
+  canvas{
+    display:block;
+    border-radius:10px;
+  }
+  #controls{
+    width:100%;
+    max-width:520px;
+    margin-top:20px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .control{
+    background:var(--panel);
+    border-radius:10px;
+    padding:12px 16px;
+  }
+  .control label{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.85rem;
+    color:var(--muted);
+    margin-bottom:8px;
+  }
+  .control label span.val{
+    color:var(--accent);
+    font-weight:600;
+  }
+  input[type=range]{
+    width:100%;
+    accent-color:var(--accent);
+  }
+  button{
+    background:var(--accent);
+    color:#0b0d12;
+    border:none;
+    border-radius:6px;
+    padding:6px 14px;
+    font-size:0.85rem;
+    font-weight:600;
+    cursor:pointer;
+  }
+  button:hover{
+    filter:brightness(1.1);
+  }
+  button.active{
+    background:var(--line2);
+  }
+  input[type=number]{
+    width:70px;
+    background:#0b0d12;
+    border:1px solid #262b36;
+    color:var(--text);
+    border-radius:6px;
+    padding:4px 6px;
+    font-size:0.85rem;
+  }
+  .row{
+    display:flex;
+    gap:16px;
+  }
+  .row .control{flex:1;}
+  #meta{
+    font-size:0.75rem;
+    color:var(--muted);
+    margin-top:14px;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Multiplication Circle</h1>
+<p class="sub">points on a circle joined by n × multiplier (mod n)</p>
+
+<div id="canvas-wrap">
+  <canvas id="cv" width="560" height="560"></canvas>
+</div>
+
+<div id="controls">
+  <div class="row">
+    <div class="control">
+      <label>Divisions (n) <span class="val" id="nVal">200</span></label>
+      <input type="range" id="nSlider" min="3" max="1000" value="200">
+    </div>
+    <div class="control">
+      <label>Multiplier <span class="val" id="mVal">2</span></label>
+      <input type="range" id="mSlider" min="0" max="50" step="0.1" value="2">
+    </div>
+  </div>
+  <div class="control">
+    <label>Exact values</label>
+    <div style="display:flex; gap:12px; align-items:center;">
+      n = <input type="number" id="nInput" min="3" max="5000" value="200">
+      × <input type="number" id="mInput" min="0" step="0.1" value="2">
+    </div>
+  </div>
+  <div class="control">
+    <label>Auto-play multiplier <span class="val" id="speedVal">0.02 / frame</span></label>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <button id="playBtn">▶ Play</button>
+      <input type="range" id="speedSlider" min="0.005" max="0.5" step="0.005" value="0.02" style="flex:1;">
+      <label style="display:flex; align-items:center; gap:4px; font-size:0.8rem; margin:0;">
+        <input type="checkbox" id="loopCheck"> loop at max
+      </label>
+    </div>
+  </div>
+</div>
+
+<div id="meta"></div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const size = cv.width;
+const cx = size/2, cy = size/2, r = size/2 - 20;
+
+const nSlider = document.getElementById('nSlider');
+const mSlider = document.getElementById('mSlider');
+const nInput = document.getElementById('nInput');
+const mInput = document.getElementById('mInput');
+const nVal = document.getElementById('nVal');
+const mVal = document.getElementById('mVal');
+const meta = document.getElementById('meta');
+
+function points(n){
+  const pts = [];
+  for(let i=0;i<n;i++){
+    const angle = (i/n) * Math.PI*2 - Math.PI/2;
+    pts.push([cx + r*Math.cos(angle), cy + r*Math.sin(angle)]);
+  }
+  return pts;
+}
+
+function draw(){
+  const n = parseInt(nInput.value);
+  const m = parseFloat(mInput.value);
+
+  ctx.clearRect(0,0,size,size);
+
+  // base circle
+  ctx.beginPath();
+  ctx.arc(cx,cy,r,0,Math.PI*2);
+  ctx.strokeStyle = '#262b36';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  const pts = points(n);
+
+  // draw dots for reasonable n
+  if(n <= 400){
+    ctx.fillStyle = '#3a4150';
+    for(const [x,y] of pts){
+      ctx.beginPath();
+      ctx.arc(x,y,1.5,0,Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  ctx.beginPath();
+  for(let i=0;i<n;i++){
+    const j = (i*m) % n;
+    const j0 = Math.floor(j);
+    const j1 = (j0+1) % n;
+    const frac = j - j0;
+    const x = pts[j0][0] + (pts[j1][0]-pts[j0][0])*frac;
+    const y = pts[j0][1] + (pts[j1][1]-pts[j0][1])*frac;
+    ctx.moveTo(...pts[i]);
+    ctx.lineTo(x,y);
+  }
+  const hue = (m*40) % 360;
+  ctx.strokeStyle = `hsl(${hue}, 80%, 65%)`;
+  ctx.lineWidth = n > 500 ? 0.4 : 0.7;
+  ctx.globalAlpha = n > 500 ? 0.5 : 0.8;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  meta.textContent = `n = ${n}, multiplier = ${m} — each point i connects to (i × ${m}) mod ${n}`;
+}
+
+function syncFromSlider(){
+  nInput.value = nSlider.value;
+  mInput.value = mSlider.value;
+  nVal.textContent = nSlider.value;
+  mVal.textContent = mSlider.value;
+  draw();
+}
+function syncFromInput(){
+  nSlider.value = Math.min(Math.max(nInput.value,3),1000);
+  mSlider.value = Math.min(Math.max(mInput.value,0),50);
+  nVal.textContent = nInput.value;
+  mVal.textContent = mInput.value;
+  draw();
+}
+
+nSlider.addEventListener('input', syncFromSlider);
+mSlider.addEventListener('input', syncFromSlider);
+nInput.addEventListener('input', syncFromInput);
+mInput.addEventListener('input', syncFromInput);
+
+// --- Auto-play ---
+const playBtn = document.getElementById('playBtn');
+const speedSlider = document.getElementById('speedSlider');
+const speedVal = document.getElementById('speedVal');
+const loopCheck = document.getElementById('loopCheck');
+
+let playing = false;
+let rafId = null;
+const M_MAX = parseFloat(mSlider.max);
+const M_MIN = parseFloat(mSlider.min);
+
+speedSlider.addEventListener('input', () => {
+  speedVal.textContent = `${parseFloat(speedSlider.value).toFixed(3)} / frame`;
+});
+
+function tick(){
+  if(!playing) return;
+  let m = parseFloat(mInput.value) + parseFloat(speedSlider.value);
+  if(m > M_MAX){
+    m = loopCheck.checked ? M_MIN : M_MAX;
+    if(!loopCheck.checked) stopPlaying();
+  }
+  mInput.value = m.toFixed(3);
+  mSlider.value = Math.min(Math.max(m, M_MIN), M_MAX);
+  mVal.textContent = mSlider.value;
+  draw();
+  rafId = requestAnimationFrame(tick);
+}
+
+function startPlaying(){
+  playing = true;
+  playBtn.textContent = '⏸ Pause';
+  playBtn.classList.add('active');
+  rafId = requestAnimationFrame(tick);
+}
+function stopPlaying(){
+  playing = false;
+  playBtn.textContent = '▶ Play';
+  playBtn.classList.remove('active');
+  if(rafId) cancelAnimationFrame(rafId);
+}
+
+playBtn.addEventListener('click', () => {
+  if(playing) stopPlaying(); else startPlaying();
+});
+
+draw();
+</script>
+
+</body>
+</html>
