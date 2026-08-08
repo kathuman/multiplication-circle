@@ -2,11 +2,8 @@
 
 An interactive visualizer of modular multiplication tables on a circle. Points are placed evenly around a circle, and each point is connected to another according to a multiplier — the same construction behind the classic "times-table cardioid" visualizations that circulate online (e.g. Mathologer's videos on the topic).
 
-**[Live demo →](https://yourusername.github.io/multiplication-circle/)**
-*(replace with your actual GitHub Pages URL once published)*
+**[Live demo →]([https://yourusername.github.io/multiplication-circle/](https://kathuman.github.io/multiplication-circle/))**
 
-![screenshot placeholder](screenshot.png)
-*(optional: add a screenshot of the app here)*
 
 ## How it works
 
